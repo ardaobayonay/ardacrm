@@ -1,11 +1,6 @@
-@import url('https://fonts.cdnfonts.com/css/helvetica-neue-5');
-
-* {
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-body {
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
+body, input, select, textarea, button {
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+  letter-spacing: -0.2px !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
 }
