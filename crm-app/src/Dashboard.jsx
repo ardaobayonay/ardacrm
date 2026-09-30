@@ -98,12 +98,12 @@ export default function Dashboard() {
     setNewCompany({ ...newCompany, region: selectedReg, country: regObj ? regObj.countries[0].tr : '' });
   };
 
-  const getGreeting = () => {
+ const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) return 'Günaydın';
-    if (hour >= 12 && hour < 18) return 'İyi Günler';
-    if (hour >= 18 && hour < 22) return 'İyi Akşamlar';
-    return 'İyi Geceler';
+    if (hour >= 5 && hour < 12) return 'Günaydın.';
+    if (hour >= 12 && hour < 18) return 'İyi günler.';
+    if (hour >= 18 && hour < 22) return 'İyi akşamlar.';
+    return 'İyi geceler.';
   };
 
   const toggleRegion = (regionName) => {
