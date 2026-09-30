@@ -228,7 +228,7 @@ export default function Dashboard() {
         {currentView === 'home' && (
           <div className="content-area">
             <div style={styles.pageHeader}>
-              <h1 style={styles.largeTitle}>{getGreeting()} 👋</h1>
+              <h1 style={styles.largeTitle}>{getGreeting()}</h1>
               <button style={styles.pillButton} onClick={() => setCurrentView('addCompany')}>
                 <Plus size={18} /> Yeni Ekle
               </button>
