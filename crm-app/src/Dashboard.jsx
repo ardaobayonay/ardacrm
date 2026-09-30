@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
-import { ChevronRight, ChevronDown, ArrowLeft, Building2, Phone, Mail, User, MapPin, Search, Plus, Globe2, Save, Trash2 } from 'lucide-react';
+import { ChevronRight, ChevronDown, ArrowLeft, Building2, Search, Plus, Globe2, Save } from 'lucide-react';
 
 const regions = [
   { id: 'weu', name: 'Batı Avrupa', color: '#007aff', countries: [{ tr: 'Almanya', en: 'Germany' }, { tr: 'Avusturya', en: 'Austria' }, { tr: 'Belçika', en: 'Belgium' }, { tr: 'Birleşik Krallık', en: 'United Kingdom' }, { tr: 'Fransa', en: 'France' }, { tr: 'Hollanda', en: 'Netherlands' }, { tr: 'İrlanda', en: 'Ireland' }, { tr: 'İsviçre', en: 'Switzerland' }, { tr: 'Lüksemburg', en: 'Luxembourg' }] },
