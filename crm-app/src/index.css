@@ -1,12 +1,5 @@
-@font-face {
-  font-family: 'HelveticaForced';
-  src: url('./fonts/Helvetica.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-}
-
 body {
-  font-family: 'HelveticaForced', Helvetica, Arial, sans-serif !important;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", sans-serif !important;
 }
 body { 
   background-color: #f0f2f5; 
