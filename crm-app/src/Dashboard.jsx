@@ -7,7 +7,12 @@ const regions = [
   { id: 'weu', name: 'Batı Avrupa', color: '#007aff', countries: [{ tr: 'Almanya', en: 'Germany' }, { tr: 'Avusturya', en: 'Austria' }, { tr: 'Belçika', en: 'Belgium' }, { tr: 'Birleşik Krallık', en: 'United Kingdom' }, { tr: 'Fransa', en: 'France' }, { tr: 'Hollanda', en: 'Netherlands' }, { tr: 'İrlanda', en: 'Ireland' }, { tr: 'İsviçre', en: 'Switzerland' }, { tr: 'Lüksemburg', en: 'Luxembourg' }] },
   { id: 'neu', name: 'Kuzey Avrupa', color: '#34c759', countries: [{ tr: 'Danimarka', en: 'Denmark' }, { tr: 'Estonya', en: 'Estonia' }, { tr: 'Finlandiya', en: 'Finland' }, { tr: 'İsveç', en: 'Sweden' }, { tr: 'İzlanda', en: 'Iceland' }, { tr: 'Letonya', en: 'Latvia' }, { tr: 'Litvanya', en: 'Lithuania' }, { tr: 'Norveç', en: 'Norway' }] },
   { id: 'cee', name: 'Orta ve Doğu Avrupa', color: '#ff9500', countries: [{ tr: 'Belarus', en: 'Belarus' }, { tr: 'Bulgaristan', en: 'Bulgaria' }, { tr: 'Çekya', en: 'Czechia' }, { tr: 'Macaristan', en: 'Hungary' }, { tr: 'Moldova', en: 'Moldova' }, { tr: 'Polonya', en: 'Poland' }, { tr: 'Romanya', en: 'Romania' }, { tr: 'Rusya', en: 'Russia' }, { tr: 'Slovakya', en: 'Slovakia' }, { tr: 'Ukrayna', en: 'Ukraine' }] },
-  { id: 'seu', name: 'Güney Avrupa', color: '#ff3b30', countries: [{ tr: 'Arnavutluk', en: 'Albania' }, { tr: 'Bosna-Hersek', en: 'Bosnia and Herzegovina' }, { tr: 'Hırvatistan', en: 'Croatia' }, { tr: 'İspanya', en: 'Spain' }, { tr: 'İtalya', en: 'Italy' }, { tr: 'Karadağ', en: 'Montenegro' }, { tr: 'Kıbrıs', en: 'Cyprus' }, { tr: 'Kuzey Makedonya', en: 'North Macedonia' }, { tr: 'Malta', en: 'Malta' }, { tr: 'Portekiz', en: 'Portugal' }, { tr: 'Sırbistan', en: 'Serbia' }, { tr: 'Slovenya', en: 'Slovenia' }, { tr: 'Türkiye', en: 'Turkey' }, { tr: 'Yunanistan', en: 'Greece' }] }
+  { id: 'seu', name: 'Güney Avrupa', color: '#ff3b30', countries: [{ tr: 'Arnavutluk', en: 'Albania' }, { tr: 'Bosna-Hersek', en: 'Bosnia and Herzegovina' }, { tr: 'Hırvatistan', en: 'Croatia' }, { tr: 'İspanya', en: 'Spain' }, { tr: 'İtalya', en: 'Italy' }, { tr: 'Karadağ', en: 'Montenegro' }, { tr: 'Kıbrıs', en: 'Cyprus' }, { tr: 'Kuzey Makedonya', en: 'North Macedonia' }, { tr: 'Malta', en: 'Malta' }, { tr: 'Portekiz', en: 'Portugal' }, { tr: 'Sırbistan', en: 'Serbia' }, { tr: 'Slovenya', en: 'Slovenia' }, { tr: 'Türkiye', en: 'Turkey' }, { tr: 'Yunanistan', en: 'Greece' }] },
+  { id: 'nam', name: 'Kuzey Amerika', color: '#5856d6', countries: [{ tr: 'Amerika Birleşik Devletleri', en: 'United States' }, { tr: 'Kanada', en: 'Canada' }, { tr: 'Meksika', en: 'Mexico' }] },
+  { id: 'sam', name: 'Güney Amerika', color: '#af52de', countries: [{ tr: 'Arjantin', en: 'Argentina' }, { tr: 'Brezilya', en: 'Brazil' }, { tr: 'Kolombiya', en: 'Colombia' }, { tr: 'Şili', en: 'Chile' }, { tr: 'Peru', en: 'Peru' }] },
+  { id: 'asia', name: 'Asya', color: '#ff2d55', countries: [{ tr: 'Çin', en: 'China' }, { tr: 'Japonya', en: 'Japan' }, { tr: 'Güney Kore', en: 'South Korea' }, { tr: 'Hindistan', en: 'India' }, { tr: 'Birleşik Arap Emirlikleri', en: 'United Arab Emirates' }, { tr: 'Suudi Arabistan', en: 'Saudi Arabia' }, { tr: 'Singapur', en: 'Singapore' }, { tr: 'Malezya', en: 'Malaysia' }, { tr: 'İsrail', en: 'Israel' }, { tr: 'Katar', en: 'Qatar' }] },
+  { id: 'oce', name: 'Okyanusya', color: '#5ac8fa', countries: [{ tr: 'Avustralya', en: 'Australia' }, { tr: 'Yeni Zelanda', en: 'New Zealand' }] },
+  { id: 'afr', name: 'Afrika', color: '#ffcc00', countries: [{ tr: 'Güney Afrika', en: 'South Africa' }, { tr: 'Mısır', en: 'Egypt' }, { tr: 'Fas', en: 'Morocco' }, { tr: 'Nijerya', en: 'Nigeria' }, { tr: 'Kenya', en: 'Kenya' }] }
 ];
 
 export default function Dashboard() {
@@ -229,30 +234,23 @@ export default function Dashboard() {
               </button>
             </div>
 
+            {/* iOS TARZI SAF BEYAZ, SİMGE İÇERMEYEN WIDGET KUTULARI */}
             <div className="stats-grid">
-              <div className="widget-hover" style={{...styles.widget, background: 'linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)', boxShadow: '0 12px 24px rgba(161, 196, 253, 0.4)'}} onClick={() => handleWidgetClick('all', 'Tüm Firmalar')}>
-                <div style={styles.widgetHeader}><Building2 size={28} color="#1d1d1f" /></div>
-                <div style={{marginTop: 'auto'}}>
-                  <h2 style={styles.widgetNumber}>{totalCompanies}</h2><span style={styles.widgetLabel}>Toplam Firma</span>
-                </div>
+              <div className="widget-hover" style={styles.iosWidget} onClick={() => handleWidgetClick('all', 'Tüm Firmalar')}>
+                <span style={styles.iosWidgetLabel}>Toplam Firma</span>
+                <h2 style={styles.iosWidgetNumber}>{totalCompanies}</h2>
               </div>
-              <div className="widget-hover" style={{...styles.widget, background: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)', boxShadow: '0 12px 24px rgba(254, 207, 239, 0.4)'}} onClick={() => handleWidgetClick('active', 'Aktif Görüşmeler')}>
-                <div style={styles.widgetHeader}><TrendingUp size={28} color="#1d1d1f" /></div>
-                <div style={{marginTop: 'auto'}}>
-                  <h2 style={styles.widgetNumber}>{activeCompanies}</h2><span style={styles.widgetLabel}>Aktif Görüşme</span>
-                </div>
+              <div className="widget-hover" style={styles.iosWidget} onClick={() => handleWidgetClick('active', 'Aktif Görüşmeler')}>
+                <span style={styles.iosWidgetLabel}>Aktif Görüşme</span>
+                <h2 style={styles.iosWidgetNumber}>{activeCompanies}</h2>
               </div>
-              <div className="widget-hover" style={{...styles.widget, background: 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)', boxShadow: '0 12px 24px rgba(132, 250, 176, 0.4)'}} onClick={() => handleWidgetClick('won', 'Kazanılan Müşteriler')}>
-                <div style={styles.widgetHeader}><CheckCircle2 size={28} color="#1d1d1f" /></div>
-                <div style={{marginTop: 'auto'}}>
-                  <h2 style={styles.widgetNumber}>{wonCompanies}</h2><span style={styles.widgetLabel}>Kazanılan</span>
-                </div>
+              <div className="widget-hover" style={styles.iosWidget} onClick={() => handleWidgetClick('won', 'Kazanılan Müşteriler')}>
+                <span style={styles.iosWidgetLabel}>Kazanılan</span>
+                <h2 style={styles.iosWidgetNumber}>{wonCompanies}</h2>
               </div>
-              <div className="widget-hover" style={{...styles.widget, background: 'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)', boxShadow: '0 12px 24px rgba(224, 195, 252, 0.4)'}} onClick={() => handleWidgetClick('contacts', 'Kayıtlı Kişiler')}>
-                <div style={styles.widgetHeader}><Users size={28} color="#1d1d1f" /></div>
-                <div style={{marginTop: 'auto'}}>
-                  <h2 style={styles.widgetNumber}>{totalCompanies}</h2><span style={styles.widgetLabel}>Kayıtlı Kişi</span>
-                </div>
+              <div className="widget-hover" style={styles.iosWidget} onClick={() => handleWidgetClick('contacts', 'Kayıtlı Kişiler')}>
+                <span style={styles.iosWidgetLabel}>Kayıtlı Kişi</span>
+                <h2 style={styles.iosWidgetNumber}>{totalCompanies}</h2>
               </div>
             </div>
             
@@ -314,7 +312,7 @@ export default function Dashboard() {
               <h2 style={styles.sectionHeader}>FİRMA BİLGİLERİ</h2>
               <div style={styles.listGroup}>
                 <div style={styles.detailItem}><span style={styles.listItemText}>Firma Adı</span><input style={styles.formInput} required value={newCompany.name} onChange={e => setNewCompany({...newCompany, name: e.target.value})} /></div>
-                <div style={styles.detailItem}><span style={styles.listItemText}>Bölge</span><select style={styles.formSelect} value={newCompany.region} onChange={handleRegionChange}><option value="Batı Avrupa">Batı Avrupa</option><option value="Kuzey Avrupa">Kuzey Avrupa</option><option value="Orta ve Doğu Avrupa">Orta ve Doğu Avrupa</option><option value="Güney Avrupa">Güney Avrupa</option></select></div>
+                <div style={styles.detailItem}><span style={styles.listItemText}>Bölge</span><select style={styles.formSelect} value={newCompany.region} onChange={handleRegionChange}>{regions.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}</select></div>
                 <div style={styles.detailItem}><span style={styles.listItemText}>Ülke</span><select style={styles.formSelect} required value={newCompany.country} onChange={e => setNewCompany({...newCompany, country: e.target.value})}>{availableCountries.map(c => (<option key={c.en} value={c.tr}>{c.tr}</option>))}</select></div>
                 <div style={styles.detailItem}><span style={styles.listItemText}>Şehir</span><input style={styles.formInput} value={newCompany.city} onChange={e => setNewCompany({...newCompany, city: e.target.value})} /></div>
                 <div style={{...styles.detailItem, borderBottom: 'none'}}><span style={styles.listItemText}>Sektör</span><input style={styles.formInput} value={newCompany.sector} onChange={e => setNewCompany({...newCompany, sector: e.target.value})} /></div>
@@ -349,7 +347,7 @@ export default function Dashboard() {
                 <h2 style={styles.sectionHeader}>FİRMA BİLGİLERİ</h2>
                 <div style={styles.listGroup}>
                   <div style={styles.detailItem}><span style={styles.listItemText}>Firma Adı</span><input style={styles.formInput} required value={editCompany.name} onChange={e => setEditCompany({...editCompany, name: e.target.value})} /></div>
-                  <div style={styles.detailItem}><span style={styles.listItemText}>Bölge</span><select style={styles.formSelect} value={editCompany.region} onChange={handleRegionChangeEdit}><option value="Batı Avrupa">Batı Avrupa</option><option value="Kuzey Avrupa">Kuzey Avrupa</option><option value="Orta ve Doğu Avrupa">Orta ve Doğu Avrupa</option><option value="Güney Avrupa">Güney Avrupa</option></select></div>
+                  <div style={styles.detailItem}><span style={styles.listItemText}>Bölge</span><select style={styles.formSelect} value={editCompany.region} onChange={handleRegionChangeEdit}>{regions.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}</select></div>
                   <div style={styles.detailItem}><span style={styles.listItemText}>Ülke</span><select style={styles.formSelect} required value={editCompany.country} onChange={e => setEditCompany({...editCompany, country: e.target.value})}>{availableCountriesEdit.map(c => (<option key={c.en} value={c.tr}>{c.tr}</option>))}</select></div>
                   <div style={styles.detailItem}><span style={styles.listItemText}>Şehir</span><input style={styles.formInput} value={editCompany.city || ''} onChange={e => setEditCompany({...editCompany, city: e.target.value})} /></div>
                   <div style={{...styles.detailItem, borderBottom: 'none'}}><span style={styles.listItemText}>Sektör</span><input style={styles.formInput} value={editCompany.sector} onChange={e => setEditCompany({...editCompany, sector: e.target.value})} /></div>
@@ -373,7 +371,8 @@ export default function Dashboard() {
                 <div style={styles.profileHeader}>
                   <div style={styles.profileAvatar}><Building2 size={40} color="#007aff" /></div>
                   <h1 style={{...styles.largeTitle, textAlign: 'center'}}>{selectedCompany.name}</h1>
-                  <span style={styles.secondaryText}>{selectedCompany.sector} Sektörü • {selectedCompany.city ? `${selectedCompany.city}, ` : ''}{selectedCompany.country}</span>
+                  {/* Sektör yazısı kaldırıldı, doğrudan sektör ismi gösteriliyor */}
+                  <span style={styles.secondaryText}>{selectedCompany.sector ? `${selectedCompany.sector} • ` : ''}{selectedCompany.city ? `${selectedCompany.city}, ` : ''}{selectedCompany.country}</span>
                 </div>
                 <h2 style={styles.sectionHeader}>İLETİŞİM BİLGİLERİ</h2>
                 <div style={styles.listGroup}>
@@ -406,7 +405,7 @@ const styles = {
   listItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', borderRadius: '14px', backgroundColor: 'transparent', cursor: 'pointer' },
   listItemLeft: { display: 'flex', alignItems: 'center', gap: '14px' },
   listItemLeftColumn: { display: 'flex', flexDirection: 'column', gap: '4px' },
-  listItemText: { fontSize: '16px', fontWeight: 300, color: '#1d1d1f' }, 
+  listItemText: { fontSize: '16px', fontWeight: 300, color: '#1d1d1f', whiteSpace: 'nowrap' }, 
   subText: { fontSize: '14px', fontWeight: 300, color: '#86868b' }, 
   secondaryText: { fontSize: '16px', fontWeight: 300, color: '#86868b' }, 
   iconSquircle: { width: '32px', height: '32px', borderRadius: '10px', display: 'flex', justifyContent: 'center', alignItems: 'center' },
@@ -418,10 +417,12 @@ const styles = {
   pageHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' },
   pageHeaderNav: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', minHeight: '30px' },
   sectionHeader: { fontSize: '13px', fontWeight: 500, color: '#86868b', marginTop: '40px', marginBottom: '12px', paddingLeft: '12px', letterSpacing: '0.5px' }, 
-  widget: { padding: '24px', borderRadius: '24px', display: 'flex', flexDirection: 'column', minHeight: '150px' },
-  widgetHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' },
-  widgetNumber: { fontSize: '42px', fontWeight: 500, margin: '0', color: '#1d1d1f', letterSpacing: '-1px' }, 
-  widgetLabel: { fontSize: '15px', fontWeight: 500, color: 'rgba(29, 29, 31, 0.6)' }, 
+  
+  // YENİ iOS WIDGET STİLLERİ
+  iosWidget: { backgroundColor: '#ffffff', borderRadius: '20px', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '120px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' },
+  iosWidgetLabel: { fontSize: '14px', fontWeight: 500, color: '#86868b' },
+  iosWidgetNumber: { fontSize: '38px', fontWeight: 500, margin: 0, color: '#1d1d1f', letterSpacing: '-1px' },
+
   pillButton: { display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #007aff 0%, #0056b3 100%)', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: '24px', fontSize: '15px', fontWeight: 500, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0, 122, 255, 0.3)' },
   pillButtonSmall: { display: 'flex', alignItems: 'center', gap: '4px', background: '#007aff', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '20px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' },
   navButton: { display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'transparent', border: 'none', color: '#007aff', cursor: 'pointer', padding: 0, marginLeft: '-8px', fontFamily: 'inherit', fontWeight: 300 },
