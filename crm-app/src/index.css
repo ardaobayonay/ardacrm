@@ -97,4 +97,27 @@ body {
     grid-template-columns: repeat(2, 1fr);
     gap: 16px;
   }
+}/* --- YATAY SCROLL İÇİN NİHAİ KİLİT VE METİN TAŞMA DÜZELTMESİ --- */
+
+/* 1. Tüm ana kapsayıcıların yatay genişlemesini fiziksel olarak mühürler */
+.app-container, .app-sidebar, .app-main, .content-area {
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
+}
+
+/* 2. Uzun metinlerin listeleri dışa doğru ittirmesini engeller */
+.hover-item, form {
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+/* 3. İç içe kutuların metin boyutuna göre değil, ekran boyutuna göre daralabilmesini sağlar */
+.hover-item > div {
+  min-width: 0 !important;
+}
+
+/* 4. Ekrana sığmayan uzun e-postaları ve firma isimlerini zorla üç noktaya (...) çevirir */
+.hover-item span, .content-area span {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
