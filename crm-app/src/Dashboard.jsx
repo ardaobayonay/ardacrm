@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
-import { ChevronRight, ChevronDown, ArrowLeft, Building2, Phone, Mail, User, MapPin, Search, Plus, TrendingUp, Users, CheckCircle2, Globe2, Save, Trash2, MessageSquarePlus } from 'lucide-react';
+import { ChevronRight, ChevronDown, ArrowLeft, Building2, Search, Plus, Globe2, Save, MessageSquarePlus, Download } from 'lucide-react';
 
 const regions = [
   { id: 'weu', name: 'Batı Avrupa', color: '#007aff', countries: [{ tr: 'Almanya', en: 'Germany' }, { tr: 'Avusturya', en: 'Austria' }, { tr: 'Belçika', en: 'Belgium' }, { tr: 'Birleşik Krallık', en: 'United Kingdom' }, { tr: 'Fransa', en: 'France' }, { tr: 'Hollanda', en: 'Netherlands' }, { tr: 'İrlanda', en: 'Ireland' }, { tr: 'İsviçre', en: 'Switzerland' }, { tr: 'Lüksemburg', en: 'Luxembourg' }] },
@@ -30,7 +30,6 @@ export default function Dashboard() {
   const [editCompany, setEditCompany] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   
-  // YENİ: Not Ekleme State'leri
   const [newNoteText, setNewNoteText] = useState('');
   const [isAddingNote, setIsAddingNote] = useState(false);
 
@@ -49,25 +48,20 @@ export default function Dashboard() {
     if (!error) navigate('/'); 
   };
 
-  // YENİ: Notları JSON olarak çözümleyen yardımcı fonksiyon
   const getParsedNotes = (notesStr) => {
     if (!notesStr) return [];
     try {
       const parsed = JSON.parse(notesStr);
       if (Array.isArray(parsed)) return parsed;
-    } catch (e) {
-      // JSON değilse eski düz metindir, onu ilk nota dönüştürür.
-    }
+    } catch (e) {}
     return [{ id: 'legacy', date: new Date().toISOString(), text: notesStr }];
   };
 
-  // YENİ: Tarih formatlayıcı
   const formatDate = (isoString) => {
     const date = new Date(isoString);
     return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
 
-  // YENİ: Timeline'a not ekleme fonksiyonu
   const handleAddNoteToHistory = async () => {
     if (!newNoteText.trim()) return;
     setIsAddingNote(true);
@@ -88,7 +82,6 @@ export default function Dashboard() {
     setIsAddingNote(false);
   };
 
-  // GÜNCELLENDİ: Yeni firma eklerken notu JSON olarak kaydeder
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -216,20 +209,55 @@ export default function Dashboard() {
   const wonCompanies = companies.filter(c => c.status === 'Müşteri Oldu').length;
 
   let listTitle = 'Firmalar.';
-  if (searchQuery) listTitle = 'Arama sonuçları.';
-  else if (selectedLocation.displayName) listTitle = selectedLocation.displayName + '.';
-  else if (selectedCategory.displayName) listTitle = selectedCategory.displayName + '.';
+  let exportFileName = 'firmalar';
+  if (searchQuery) { listTitle = 'Arama sonuçları.'; exportFileName = 'arama_sonuclari'; }
+  else if (selectedLocation.displayName) { listTitle = selectedLocation.displayName + '.'; exportFileName = selectedLocation.displayName.toLowerCase().replace(/ /g, '_'); }
+  else if (selectedCategory.displayName) { listTitle = selectedCategory.displayName + '.'; exportFileName = selectedCategory.displayName.toLowerCase().replace(/ /g, '_'); }
 
-  // YENİ: Timeline için notları parse et
+  // YENİ: Dinamik CSV İndirme Fonksiyonu
+  const handleExportCSV = () => {
+    if (displayedCompanies.length === 0) return;
+
+    // Excel sütun başlıkları
+    const headers = ['Firma Adı', 'Bölge', 'Ülke', 'Şehir', 'Sektör', 'Yetkili Kişi', 'Unvan', 'Telefon', 'E-posta', 'Aşama', 'Görüşme Geçmişi'];
+
+    // Şirket verilerini satırlara çevir
+    const csvRows = displayedCompanies.map(c => {
+      // Timeline notlarını yan yana tarihleriyle birleştir
+      const parsedNotes = getParsedNotes(c.notes);
+      let combinedNotes = parsedNotes.map(n => `[${new Date(n.date).toLocaleDateString('tr-TR')}] ${n.text}`).join(' | ');
+      // Excel'de formülleri bozmaması ve virgüllerin karışmaması için metinleri temizle
+      combinedNotes = combinedNotes.replace(/"/g, '""').replace(/\n/g, ' ');
+
+      return `"${c.name || ''}","${c.region || ''}","${c.country || ''}","${c.city || ''}","${c.sector || ''}","${c.contactName || ''}","${c.title || ''}","${c.phone || ''}","${c.email || ''}","${c.status || ''}","${combinedNotes}"`;
+    });
+
+    // Başlık ve satırları birleştir
+    const csvContent = [headers.join(','), ...csvRows].join('\n');
+    
+    // Türkçe karakter (UTF-8) desteği için BOM (Byte Order Mark) ekle
+    const bom = '\uFEFF';
+    const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    // Gizli indirme linki tetikleyici
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `${exportFileName}_listesi.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const parsedHistory = selectedCompany ? getParsedNotes(selectedCompany.notes) : [];
 
   return (
     <div className="app-container">
       {/* SOL MENÜ */}
       <div className="app-sidebar">
-       <div style={styles.sidebarHeader} onClick={handleLogoClick}>
+        <div style={styles.sidebarHeader} onClick={handleLogoClick}>
           <h1 style={styles.largeTitle}>FTS</h1>
-          <span style={{ display: 'block', fontSize: '14px', fontWeight: 400, color: '#86868b', marginTop: '4px' }}>Firma Takip Sistemi</span>
+          <span style={{ display: 'block', fontSize: '14px', fontWeight: 400, color: '#86868b', marginTop: '4px' }}>Firma takip sistemi.</span>
         </div>
         
         <div style={styles.searchContainer}>
@@ -329,7 +357,20 @@ export default function Dashboard() {
           <div className="content-area">
             <div style={styles.pageHeaderNav}>
               {!searchQuery && (<button style={styles.navButton} onClick={() => setCurrentView('home')}><ArrowLeft size={22} /> <span style={{fontSize: '17px', paddingTop: '1px'}}>Geri</span></button>)}
-              <button style={styles.pillButtonSmall} onClick={() => setCurrentView('addCompany')}><Plus size={16} /> Ekle</button>
+              
+              {/* YENİ: İndirme ve Ekleme butonları yan yana */}
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginLeft: 'auto' }}>
+                {displayedCompanies.length > 0 && (
+                  <button 
+                    style={{...styles.navButtonText, display: 'flex', alignItems: 'center', gap: '6px', fontSize: '15px'}} 
+                    onClick={handleExportCSV}
+                    title="Bu listeyi Excel olarak indir"
+                  >
+                    <Download size={18} /> İndir
+                  </button>
+                )}
+                <button style={styles.pillButtonSmall} onClick={() => setCurrentView('addCompany')}><Plus size={16} /> Ekle</button>
+              </div>
             </div>
             <h1 style={styles.largeTitle}>{listTitle}</h1>
             {selectedCategory.id === 'contacts' && (
@@ -382,8 +423,6 @@ export default function Dashboard() {
               <h2 style={styles.sectionHeader}>Durum.</h2>
               <div style={styles.listGroup}>
                 <div style={styles.detailItem}><span style={styles.listItemText}>Aşama</span><select style={styles.formSelect} value={newCompany.status} onChange={e => setNewCompany({...newCompany, status: e.target.value})}><option value="İlk Temas">İlk Temas</option><option value="İletişimde">İletişimde</option><option value="Teklif Verildi">Teklif Verildi</option><option value="Müşteri Oldu">Müşteri Oldu</option><option value="Reddedildi">Reddedildi</option></select></div>
-                
-                {/* YENİ: İlk not alanı */}
                 <div style={{...styles.detailItem, flexDirection: 'column', alignItems: 'flex-start', borderBottom: 'none'}}>
                   <span style={styles.listItemText}>İlk görüşme notu</span>
                   <textarea style={{...styles.timelineInput, marginTop: '10px'}} placeholder="Bu firma için ilk notunuzu buraya girebilirsiniz..." value={newCompany.notes} onChange={e => setNewCompany({...newCompany, notes: e.target.value})} />
@@ -422,8 +461,6 @@ export default function Dashboard() {
                 <h2 style={styles.sectionHeader}>Durum.</h2>
                 <div style={styles.listGroup}>
                   <div style={styles.detailItem}><span style={styles.listItemText}>Aşama</span><select style={styles.formSelect} value={editCompany.status} onChange={e => setEditCompany({...editCompany, status: e.target.value})}><option value="İlk Temas">İlk Temas</option><option value="İletişimde">İletişimde</option><option value="Teklif Verildi">Teklif Verildi</option><option value="Müşteri Oldu">Müşteri Oldu</option><option value="Reddedildi">Reddedildi</option></select></div>
-                  
-                  {/* YENİ: Düzenleme ekranında notlar timeline'a bırakıldı uyarısı */}
                   <div style={{...styles.detailItem, flexDirection: 'column', alignItems: 'flex-start', borderBottom: 'none'}}>
                     <span style={styles.listItemText}>Görüşme geçmişi</span>
                     <span style={{...styles.subText, marginTop: '4px'}}>Notlarınızı düzenleme ekranından çıktığınızda zaman çizelgesi üzerinden ekleyebilirsiniz.</span>
@@ -446,7 +483,6 @@ export default function Dashboard() {
                   <div style={{...styles.detailItem, borderBottom: 'none'}}><span style={styles.listItemText}>Aşama</span><span style={styles.secondaryText}>{selectedCompany.status}</span></div>
                 </div>
 
-                {/* YENİ: GÖRÜŞME GEÇMİŞİ (TIMELINE) MODÜLÜ */}
                 <h2 style={styles.sectionHeader}>Görüşme geçmişi.</h2>
                 <div style={styles.listGroup}>
                   <div style={{ padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: '8px', borderBottom: '1px solid #f0f0f0' }}>
@@ -485,8 +521,6 @@ export default function Dashboard() {
                     )}
                   </div>
                 </div>
-                {/* TIMELINE BİTİŞ */}
-
               </>
             )}
           </div>
@@ -531,7 +565,6 @@ const styles = {
   profileHeader: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginBottom: '40px', marginTop: '20px' },
   profileAvatar: { width: '80px', height: '80px', backgroundColor: '#f5f5f7', borderRadius: '40px', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)' },
   
-  // YENİ: Timeline stilleri
   timelineInput: { width: '100%', minHeight: '80px', padding: '14px', borderRadius: '12px', border: 'none', backgroundColor: '#f5f5f7', fontSize: '15px', fontWeight: 300, color: '#1d1d1f', outline: 'none', resize: 'vertical', fontFamily: 'inherit' },
   timelineButton: { alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: '6px', background: '#007aff', color: '#fff', border: 'none', padding: '8px 18px', borderRadius: '20px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', marginTop: '12px' }
 };
