@@ -100,10 +100,10 @@ export default function Dashboard() {
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) return 'Günaydın.';
-    if (hour >= 12 && hour < 18) return 'İyi günler.';
-    if (hour >= 18 && hour < 22) return 'İyi akşamlar.';
-    if (hour >= 22 && hour < 5) return 'İyi geceler.';
+    if (hour >= 5 && hour < 12) return '';
+    if (hour >= 12 && hour < 18) return '';
+    if (hour >= 18 && hour < 22) return '';
+    if (hour >= 22 && hour < 5)  return '';
   };
 
   const toggleRegion = (regionName) => {
