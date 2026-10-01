@@ -30,7 +30,7 @@ export default function Login() {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <h2 style={styles.title}>ArdaCRM'e Giriş</h2>
+        <h2 style={styles.title}>FTS</h2>
         <form onSubmit={handleLogin} style={styles.form}>
           <input
             type="email"
