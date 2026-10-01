@@ -58,4 +58,34 @@ body {
 
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
+}/* --- MOBİL UYUM (RESPONSIVE - iOS AESTHETIC) --- */
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
+  
+  /* Sol menü mobilde üst tarafa geçer ve kaydırılabilir bir panele dönüşür */
+  .app-sidebar {
+    width: 100%;
+    height: 35vh; 
+    border-right: none;
+    border-bottom: 1px solid #e5e5ea;
+    flex-shrink: 0;
+  }
+  
+  /* Ana içerik geri kalan alanı doldurur */
+  .app-main {
+    flex: 1;
+    height: 65vh;
+  }
+  
+  .content-area {
+    padding: 24px 16px;
+  }
+  
+  /* Mobilde 4'lü grid yapısını iOS widget'ları gibi 2x2 karelere çeviririz */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
 }
