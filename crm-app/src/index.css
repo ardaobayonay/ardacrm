@@ -1,3 +1,13 @@
+/* --- KESİN YATAY SCROLL ENGELLEYİCİ VE KUTU MODELİ --- */
+*, *::before, *::after {
+  box-sizing: border-box !important;
+}
+
+html, body {
+  max-width: 100%;
+  overflow-x: hidden !important; /* Sağa sola kaymayı fiziksel olarak kilitler */
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -10,11 +20,10 @@ body {
 
 .app-container {
   display: flex;
-  width: 100vw;
+  width: 100%; /* 100vw yerine %100 kullanmak taşmayı engeller */
   height: 100vh;
   overflow: hidden;
 }
-
 .app-sidebar {
   width: 280px;
   background-color: #ffffff;
