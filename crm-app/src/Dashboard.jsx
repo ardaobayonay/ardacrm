@@ -214,7 +214,7 @@ export default function Dashboard() {
   else if (selectedLocation.displayName) { listTitle = selectedLocation.displayName + '.'; exportFileName = selectedLocation.displayName.toLowerCase().replace(/ /g, '_'); }
   else if (selectedCategory.displayName) { listTitle = selectedCategory.displayName + '.'; exportFileName = selectedCategory.displayName.toLowerCase().replace(/ /g, '_'); }
 
-  // YENİ: Dinamik CSV İndirme Fonksiyonu
+ // YENİ: Dinamik CSV İndirme Fonksiyonu (Türkiye/Avrupa Excel Uyumlu)
   const handleExportCSV = () => {
     if (displayedCompanies.length === 0) return;
 
@@ -226,14 +226,15 @@ export default function Dashboard() {
       // Timeline notlarını yan yana tarihleriyle birleştir
       const parsedNotes = getParsedNotes(c.notes);
       let combinedNotes = parsedNotes.map(n => `[${new Date(n.date).toLocaleDateString('tr-TR')}] ${n.text}`).join(' | ');
-      // Excel'de formülleri bozmaması ve virgüllerin karışmaması için metinleri temizle
+      // Excel'de formülleri bozmaması ve karışmaması için metinleri temizle
       combinedNotes = combinedNotes.replace(/"/g, '""').replace(/\n/g, ' ');
 
-      return `"${c.name || ''}","${c.region || ''}","${c.country || ''}","${c.city || ''}","${c.sector || ''}","${c.contactName || ''}","${c.title || ''}","${c.phone || ''}","${c.email || ''}","${c.status || ''}","${combinedNotes}"`;
+      // DÜZELTME: Virgül (,) yerine noktalı virgül (;) kullanıyoruz
+      return `"${c.name || ''}";"${c.region || ''}";"${c.country || ''}";"${c.city || ''}";"${c.sector || ''}";"${c.contactName || ''}";"${c.title || ''}";"${c.phone || ''}";"${c.email || ''}";"${c.status || ''}";"${combinedNotes}"`;
     });
 
-    // Başlık ve satırları birleştir
-    const csvContent = [headers.join(','), ...csvRows].join('\n');
+    // Başlık ve satırları noktalı virgül ile birleştir
+    const csvContent = [headers.join(';'), ...csvRows].join('\n');
     
     // Türkçe karakter (UTF-8) desteği için BOM (Byte Order Mark) ekle
     const bom = '\uFEFF';
@@ -248,9 +249,6 @@ export default function Dashboard() {
     link.click();
     document.body.removeChild(link);
   };
-
-  const parsedHistory = selectedCompany ? getParsedNotes(selectedCompany.notes) : [];
-
   return (
     <div className="app-container">
       {/* SOL MENÜ */}
