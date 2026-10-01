@@ -227,8 +227,9 @@ export default function Dashboard() {
     <div className="app-container">
       {/* SOL MENÜ */}
       <div className="app-sidebar">
-        <div style={styles.sidebarHeader} onClick={handleLogoClick}>
-          <h1 style={styles.largeTitle}>Firma Takip.</h1> 
+       <div style={styles.sidebarHeader} onClick={handleLogoClick}>
+          <h1 style={styles.largeTitle}>FTS</h1>
+          <span style={{ display: 'block', fontSize: '14px', fontWeight: 400, color: '#86868b', marginTop: '4px' }}>Firma Takip Sistemi</span>
         </div>
         
         <div style={styles.searchContainer}>
