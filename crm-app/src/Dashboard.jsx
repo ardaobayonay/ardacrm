@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
-import { ChevronRight, ChevronDown, ArrowLeft, Building2, Phone, Mail, User, MapPin, Search, Plus, TrendingUp, Users, CheckCircle2, Globe2, Save, Trash2 } from 'lucide-react';
+import { ChevronRight, ChevronDown, ArrowLeft, Building2, Phone, Mail, User, MapPin, Search, Plus, TrendingUp, Users, CheckCircle2, Globe2, Save, Trash2, MessageSquarePlus } from 'lucide-react';
 
 const regions = [
   { id: 'weu', name: 'Batı Avrupa', color: '#007aff', countries: [{ tr: 'Almanya', en: 'Germany' }, { tr: 'Avusturya', en: 'Austria' }, { tr: 'Belçika', en: 'Belgium' }, { tr: 'Birleşik Krallık', en: 'United Kingdom' }, { tr: 'Fransa', en: 'France' }, { tr: 'Hollanda', en: 'Netherlands' }, { tr: 'İrlanda', en: 'Ireland' }, { tr: 'İsviçre', en: 'Switzerland' }, { tr: 'Lüksemburg', en: 'Luxembourg' }] },
@@ -29,6 +29,11 @@ export default function Dashboard() {
   const [isEditing, setIsEditing] = useState(false);
   const [editCompany, setEditCompany] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // YENİ: Not Ekleme State'leri
+  const [newNoteText, setNewNoteText] = useState('');
+  const [isAddingNote, setIsAddingNote] = useState(false);
+
   const [newCompany, setNewCompany] = useState({ name: '', region: 'Batı Avrupa', country: 'Almanya', city: '', sector: '', contactName: '', title: '', email: '', phone: '', status: 'İlk Temas', notes: '' });
 
   useEffect(() => { fetchCompanies(); }, []);
@@ -44,10 +49,57 @@ export default function Dashboard() {
     if (!error) navigate('/'); 
   };
 
+  // YENİ: Notları JSON olarak çözümleyen yardımcı fonksiyon
+  const getParsedNotes = (notesStr) => {
+    if (!notesStr) return [];
+    try {
+      const parsed = JSON.parse(notesStr);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) {
+      // JSON değilse eski düz metindir, onu ilk nota dönüştürür.
+    }
+    return [{ id: 'legacy', date: new Date().toISOString(), text: notesStr }];
+  };
+
+  // YENİ: Tarih formatlayıcı
+  const formatDate = (isoString) => {
+    const date = new Date(isoString);
+    return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+
+  // YENİ: Timeline'a not ekleme fonksiyonu
+  const handleAddNoteToHistory = async () => {
+    if (!newNoteText.trim()) return;
+    setIsAddingNote(true);
+
+    const currentNotes = getParsedNotes(selectedCompany.notes);
+    const newNoteObj = { id: Date.now(), date: new Date().toISOString(), text: newNoteText.trim() };
+    const updatedNotesArray = [newNoteObj, ...currentNotes]; 
+    const updatedNotesStr = JSON.stringify(updatedNotesArray);
+
+    const { error } = await supabase.from('companies').update({ notes: updatedNotesStr }).eq('id', selectedCompany.id);
+
+    if (!error) {
+      const updatedCompany = { ...selectedCompany, notes: updatedNotesStr };
+      setSelectedCompany(updatedCompany);
+      setNewNoteText('');
+      await fetchCompanies(); 
+    }
+    setIsAddingNote(false);
+  };
+
+  // GÜNCELLENDİ: Yeni firma eklerken notu JSON olarak kaydeder
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    const { error } = await supabase.from('companies').insert([newCompany]);
+    
+    let initialNotesStr = '[]';
+    if (newCompany.notes && newCompany.notes.trim()) {
+      initialNotesStr = JSON.stringify([{ id: Date.now(), date: new Date().toISOString(), text: newCompany.notes.trim() }]);
+    }
+    const companyToInsert = { ...newCompany, notes: initialNotesStr };
+
+    const { error } = await supabase.from('companies').insert([companyToInsert]);
     if (!error) {
       await fetchCompanies(); 
       setCurrentView('home'); 
@@ -132,7 +184,7 @@ export default function Dashboard() {
   };
 
   const handleCompanyClick = (company) => {
-    setSelectedCompany(company); setIsEditing(false); setCurrentView('companyDetail');
+    setSelectedCompany(company); setNewNoteText(''); setIsEditing(false); setCurrentView('companyDetail');
   };
 
   const handleLogoClick = () => {
@@ -163,17 +215,20 @@ export default function Dashboard() {
   const activeCompanies = companies.filter(c => c.status === 'İletişimde' || c.status === 'Teklif Verildi' || c.status === 'İlk Temas').length;
   const wonCompanies = companies.filter(c => c.status === 'Müşteri Oldu').length;
 
-  let listTitle = 'Firmalar';
-  if (searchQuery) listTitle = 'Arama Sonuçları';
-  else if (selectedLocation.displayName) listTitle = selectedLocation.displayName;
-  else if (selectedCategory.displayName) listTitle = selectedCategory.displayName;
+  let listTitle = 'Firmalar.';
+  if (searchQuery) listTitle = 'Arama sonuçları.';
+  else if (selectedLocation.displayName) listTitle = selectedLocation.displayName + '.';
+  else if (selectedCategory.displayName) listTitle = selectedCategory.displayName + '.';
+
+  // YENİ: Timeline için notları parse et
+  const parsedHistory = selectedCompany ? getParsedNotes(selectedCompany.notes) : [];
 
   return (
     <div className="app-container">
       {/* SOL MENÜ */}
       <div className="app-sidebar">
         <div style={styles.sidebarHeader} onClick={handleLogoClick}>
-          <h1 style={styles.largeTitle}>Firma Takip</h1> 
+          <h1 style={styles.largeTitle}>Firma Takip.</h1> 
         </div>
         
         <div style={styles.searchContainer}>
@@ -234,7 +289,6 @@ export default function Dashboard() {
               </button>
             </div>
 
-            {/* iOS TARZI SAF BEYAZ, SİMGE İÇERMEYEN WIDGET KUTULARI */}
             <div className="stats-grid">
               <div className="widget-hover" style={styles.iosWidget} onClick={() => handleWidgetClick('all', 'Tüm Firmalar')}>
                 <span style={styles.iosWidgetLabel}>Toplam Firma</span>
@@ -256,7 +310,7 @@ export default function Dashboard() {
             
             {companies.length > 0 && (
               <>
-                <h2 style={styles.sectionHeader}>SON EKLENENLER</h2>
+                <h2 style={styles.sectionHeader}>Son eklenenler.</h2>
                 <div style={styles.listGroup}>
                   {companies.slice(0,3).map((company) => (
                     <div key={company.id} className="hover-item" style={styles.listItem} onClick={() => handleCompanyClick(company)}>
@@ -307,9 +361,9 @@ export default function Dashboard() {
               <button style={styles.navButton} onClick={() => setCurrentView('home')}><ArrowLeft size={22} /> <span style={{fontSize: '17px', paddingTop: '1px'}}>Vazgeç</span></button>
               <button style={styles.pillButtonSmall} onClick={handleAddSubmit} disabled={isSubmitting}><Save size={16} /> {isSubmitting ? 'Kaydediliyor...' : 'Kaydet'}</button>
             </div>
-            <h1 style={styles.largeTitle}>Yeni Firma</h1>
+            <h1 style={styles.largeTitle}>Yeni Firma.</h1>
             <form onSubmit={handleAddSubmit}>
-              <h2 style={styles.sectionHeader}>FİRMA BİLGİLERİ</h2>
+              <h2 style={styles.sectionHeader}>Firma bilgileri.</h2>
               <div style={styles.listGroup}>
                 <div style={styles.detailItem}><span style={styles.listItemText}>Firma Adı</span><input style={styles.formInput} required value={newCompany.name} onChange={e => setNewCompany({...newCompany, name: e.target.value})} /></div>
                 <div style={styles.detailItem}><span style={styles.listItemText}>Bölge</span><select style={styles.formSelect} value={newCompany.region} onChange={handleRegionChange}>{regions.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}</select></div>
@@ -317,17 +371,22 @@ export default function Dashboard() {
                 <div style={styles.detailItem}><span style={styles.listItemText}>Şehir</span><input style={styles.formInput} value={newCompany.city} onChange={e => setNewCompany({...newCompany, city: e.target.value})} /></div>
                 <div style={{...styles.detailItem, borderBottom: 'none'}}><span style={styles.listItemText}>Sektör</span><input style={styles.formInput} value={newCompany.sector} onChange={e => setNewCompany({...newCompany, sector: e.target.value})} /></div>
               </div>
-              <h2 style={styles.sectionHeader}>İLETİŞİM BİLGİLERİ</h2>
+              <h2 style={styles.sectionHeader}>İletişim bilgileri.</h2>
               <div style={styles.listGroup}>
                 <div style={styles.detailItem}><span style={styles.listItemText}>Yetkili Kişi</span><input style={styles.formInput} value={newCompany.contactName} onChange={e => setNewCompany({...newCompany, contactName: e.target.value})} /></div>
                 <div style={styles.detailItem}><span style={styles.listItemText}>Unvan</span><input style={styles.formInput} value={newCompany.title} onChange={e => setNewCompany({...newCompany, title: e.target.value})} /></div>
                 <div style={styles.detailItem}><span style={styles.listItemText}>Telefon</span><input style={styles.formInput} value={newCompany.phone} onChange={e => setNewCompany({...newCompany, phone: e.target.value})} /></div>
                 <div style={{...styles.detailItem, borderBottom: 'none'}}><span style={styles.listItemText}>E-posta</span><input type="email" style={styles.formInput} value={newCompany.email} onChange={e => setNewCompany({...newCompany, email: e.target.value})} /></div>
               </div>
-              <h2 style={styles.sectionHeader}>DURUM VE NOTLAR</h2>
+              <h2 style={styles.sectionHeader}>Durum.</h2>
               <div style={styles.listGroup}>
                 <div style={styles.detailItem}><span style={styles.listItemText}>Aşama</span><select style={styles.formSelect} value={newCompany.status} onChange={e => setNewCompany({...newCompany, status: e.target.value})}><option value="İlk Temas">İlk Temas</option><option value="İletişimde">İletişimde</option><option value="Teklif Verildi">Teklif Verildi</option><option value="Müşteri Oldu">Müşteri Oldu</option><option value="Reddedildi">Reddedildi</option></select></div>
-                <div style={{...styles.detailItem, flexDirection: 'column', alignItems: 'flex-start', borderBottom: 'none'}}><span style={styles.listItemText}>Görüşme Notları</span><textarea style={{...styles.formInput, textAlign: 'left', marginTop: '10px', minHeight: '80px', color: '#1d1d1f'}} value={newCompany.notes} onChange={e => setNewCompany({...newCompany, notes: e.target.value})} /></div>
+                
+                {/* YENİ: İlk not alanı */}
+                <div style={{...styles.detailItem, flexDirection: 'column', alignItems: 'flex-start', borderBottom: 'none'}}>
+                  <span style={styles.listItemText}>İlk görüşme notu</span>
+                  <textarea style={{...styles.timelineInput, marginTop: '10px'}} placeholder="Bu firma için ilk notunuzu buraya girebilirsiniz..." value={newCompany.notes} onChange={e => setNewCompany({...newCompany, notes: e.target.value})} />
+                </div>
               </div>
               <button type="submit" style={{display: 'none'}}></button>
             </form>
@@ -343,8 +402,8 @@ export default function Dashboard() {
 
             {isEditing && editCompany ? (
               <form onSubmit={handleUpdateSubmit}>
-                <h1 style={styles.largeTitle}>Firma Düzenle</h1>
-                <h2 style={styles.sectionHeader}>FİRMA BİLGİLERİ</h2>
+                <h1 style={styles.largeTitle}>Firma Düzenle.</h1>
+                <h2 style={styles.sectionHeader}>Firma bilgileri.</h2>
                 <div style={styles.listGroup}>
                   <div style={styles.detailItem}><span style={styles.listItemText}>Firma Adı</span><input style={styles.formInput} required value={editCompany.name} onChange={e => setEditCompany({...editCompany, name: e.target.value})} /></div>
                   <div style={styles.detailItem}><span style={styles.listItemText}>Bölge</span><select style={styles.formSelect} value={editCompany.region} onChange={handleRegionChangeEdit}>{regions.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}</select></div>
@@ -352,17 +411,22 @@ export default function Dashboard() {
                   <div style={styles.detailItem}><span style={styles.listItemText}>Şehir</span><input style={styles.formInput} value={editCompany.city || ''} onChange={e => setEditCompany({...editCompany, city: e.target.value})} /></div>
                   <div style={{...styles.detailItem, borderBottom: 'none'}}><span style={styles.listItemText}>Sektör</span><input style={styles.formInput} value={editCompany.sector} onChange={e => setEditCompany({...editCompany, sector: e.target.value})} /></div>
                 </div>
-                <h2 style={styles.sectionHeader}>İLETİŞİM BİLGİLERİ</h2>
+                <h2 style={styles.sectionHeader}>İletişim bilgileri.</h2>
                 <div style={styles.listGroup}>
                   <div style={styles.detailItem}><span style={styles.listItemText}>Yetkili Kişi</span><input style={styles.formInput} value={editCompany.contactName} onChange={e => setEditCompany({...editCompany, contactName: e.target.value})} /></div>
                   <div style={styles.detailItem}><span style={styles.listItemText}>Unvan</span><input style={styles.formInput} value={editCompany.title} onChange={e => setEditCompany({...editCompany, title: e.target.value})} /></div>
                   <div style={styles.detailItem}><span style={styles.listItemText}>Telefon</span><input style={styles.formInput} value={editCompany.phone} onChange={e => setEditCompany({...editCompany, phone: e.target.value})} /></div>
                   <div style={{...styles.detailItem, borderBottom: 'none'}}><span style={styles.listItemText}>E-posta</span><input type="email" style={styles.formInput} value={editCompany.email} onChange={e => setEditCompany({...editCompany, email: e.target.value})} /></div>
                 </div>
-                <h2 style={styles.sectionHeader}>DURUM VE NOTLAR</h2>
+                <h2 style={styles.sectionHeader}>Durum.</h2>
                 <div style={styles.listGroup}>
                   <div style={styles.detailItem}><span style={styles.listItemText}>Aşama</span><select style={styles.formSelect} value={editCompany.status} onChange={e => setEditCompany({...editCompany, status: e.target.value})}><option value="İlk Temas">İlk Temas</option><option value="İletişimde">İletişimde</option><option value="Teklif Verildi">Teklif Verildi</option><option value="Müşteri Oldu">Müşteri Oldu</option><option value="Reddedildi">Reddedildi</option></select></div>
-                  <div style={{...styles.detailItem, flexDirection: 'column', alignItems: 'flex-start', borderBottom: 'none'}}><span style={styles.listItemText}>Görüşme Notları</span><textarea style={{...styles.formInput, textAlign: 'left', marginTop: '10px', minHeight: '80px', color: '#1d1d1f'}} value={editCompany.notes} onChange={e => setEditCompany({...editCompany, notes: e.target.value})} /></div>
+                  
+                  {/* YENİ: Düzenleme ekranında notlar timeline'a bırakıldı uyarısı */}
+                  <div style={{...styles.detailItem, flexDirection: 'column', alignItems: 'flex-start', borderBottom: 'none'}}>
+                    <span style={styles.listItemText}>Görüşme geçmişi</span>
+                    <span style={{...styles.subText, marginTop: '4px'}}>Notlarınızı düzenleme ekranından çıktığınızda zaman çizelgesi üzerinden ekleyebilirsiniz.</span>
+                  </div>
                 </div>
                 <div style={{...styles.listGroup, marginTop: '30px', marginBottom: '20px'}}><div className="hover-item" style={{...styles.listItem, justifyContent: 'center'}} onClick={handleDelete}><span style={{fontSize: '16px', fontWeight: 500, color: '#ff3b30'}}>{isDeleting ? 'Siliniyor...' : 'Firmayı Sil'}</span></div></div>
               </form>
@@ -371,20 +435,57 @@ export default function Dashboard() {
                 <div style={styles.profileHeader}>
                   <div style={styles.profileAvatar}><Building2 size={40} color="#007aff" /></div>
                   <h1 style={{...styles.largeTitle, textAlign: 'center'}}>{selectedCompany.name}</h1>
-                  {/* Sektör yazısı kaldırıldı, doğrudan sektör ismi gösteriliyor */}
                   <span style={styles.secondaryText}>{selectedCompany.sector ? `${selectedCompany.sector} • ` : ''}{selectedCompany.city ? `${selectedCompany.city}, ` : ''}{selectedCompany.country}</span>
                 </div>
-                <h2 style={styles.sectionHeader}>İLETİŞİM BİLGİLERİ</h2>
+                <h2 style={styles.sectionHeader}>İletişim bilgileri.</h2>
                 <div style={styles.listGroup}>
                   <div style={styles.detailItem}><span style={styles.listItemText}>Yetkili Kişi</span><span style={styles.secondaryText}>{selectedCompany.contactName || '-'} ({selectedCompany.title || '-'})</span></div>
                   <div style={styles.detailItem}><span style={styles.listItemText}>Telefon</span><span style={{...styles.secondaryText, color: '#007aff'}}>{selectedCompany.phone || '-'}</span></div>
-                  <div style={{...styles.detailItem, borderBottom: 'none'}}><span style={styles.listItemText}>E-posta</span><span style={{...styles.secondaryText, color: '#007aff'}}>{selectedCompany.email || '-'}</span></div>
+                  <div style={styles.detailItem}><span style={styles.listItemText}>E-posta</span><span style={{...styles.secondaryText, color: '#007aff'}}>{selectedCompany.email || '-'}</span></div>
+                  <div style={{...styles.detailItem, borderBottom: 'none'}}><span style={styles.listItemText}>Aşama</span><span style={styles.secondaryText}>{selectedCompany.status}</span></div>
                 </div>
-                <h2 style={styles.sectionHeader}>DURUM VE NOTLAR</h2>
+
+                {/* YENİ: GÖRÜŞME GEÇMİŞİ (TIMELINE) MODÜLÜ */}
+                <h2 style={styles.sectionHeader}>Görüşme geçmişi.</h2>
                 <div style={styles.listGroup}>
-                  <div style={styles.detailItem}><span style={styles.listItemText}>Aşama</span><span style={styles.secondaryText}>{selectedCompany.status}</span></div>
-                  <div style={{...styles.detailItem, flexDirection: 'column', alignItems: 'flex-start', padding: '16px 12px', gap: '8px', borderBottom: 'none'}}><span style={styles.listItemText}>Görüşme Notları</span><span style={{color: '#1d1d1f', fontSize: '16px', fontWeight: 300, lineHeight: '1.4'}}>{selectedCompany.notes || '-'}</span></div>
+                  <div style={{ padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: '8px', borderBottom: '1px solid #f0f0f0' }}>
+                    <textarea
+                      style={styles.timelineInput}
+                      placeholder="Yeni görüşme notu ekle..."
+                      value={newNoteText}
+                      onChange={(e) => setNewNoteText(e.target.value)}
+                    />
+                    {newNoteText.trim() && (
+                      <button style={styles.timelineButton} onClick={handleAddNoteToHistory} disabled={isAddingNote}>
+                        <MessageSquarePlus size={16} />
+                        {isAddingNote ? 'Ekleniyor...' : 'Notu kaydet'}
+                      </button>
+                    )}
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', padding: '20px 12px 12px 12px' }}>
+                    {parsedHistory.length === 0 ? (
+                      <span style={{...styles.secondaryText, textAlign: 'center', paddingBottom: '12px'}}>Henüz not eklenmemiş.</span>
+                    ) : (
+                      parsedHistory.map((note, index) => (
+                        <div key={note.id} style={{ display: 'flex', gap: '16px', paddingBottom: index === parsedHistory.length - 1 ? '0' : '24px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <div style={{ width: '8px', height: '8px', borderRadius: '4px', backgroundColor: '#007aff', marginTop: '6px', zIndex: 2 }}></div>
+                            {index !== parsedHistory.length - 1 && (
+                              <div style={{ width: '1px', backgroundColor: '#e5e5ea', flex: 1, marginTop: '4px' }}></div>
+                            )}
+                          </div>
+                          <div style={{ flex: 1, paddingBottom: '4px' }}>
+                            <div style={{ fontSize: '13px', fontWeight: 500, color: '#86868b', marginBottom: '4px' }}>{formatDate(note.date)}</div>
+                            <div style={{ fontSize: '15px', fontWeight: 300, color: '#1d1d1f', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>{note.text}</div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
+                {/* TIMELINE BİTİŞ */}
+
               </>
             )}
           </div>
@@ -418,7 +519,6 @@ const styles = {
   pageHeaderNav: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', minHeight: '30px' },
   sectionHeader: { fontSize: '13px', fontWeight: 500, color: '#86868b', marginTop: '40px', marginBottom: '12px', paddingLeft: '12px', letterSpacing: '0.5px' }, 
   
-  // YENİ iOS WIDGET STİLLERİ
   iosWidget: { backgroundColor: '#ffffff', borderRadius: '20px', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '120px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' },
   iosWidgetLabel: { fontSize: '14px', fontWeight: 500, color: '#86868b' },
   iosWidgetNumber: { fontSize: '38px', fontWeight: 500, margin: 0, color: '#1d1d1f', letterSpacing: '-1px' },
@@ -428,5 +528,9 @@ const styles = {
   navButton: { display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'transparent', border: 'none', color: '#007aff', cursor: 'pointer', padding: 0, marginLeft: '-8px', fontFamily: 'inherit', fontWeight: 300 },
   navButtonText: { backgroundColor: 'transparent', border: 'none', color: '#007aff', fontSize: '17px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 300 },
   profileHeader: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginBottom: '40px', marginTop: '20px' },
-  profileAvatar: { width: '80px', height: '80px', backgroundColor: '#f5f5f7', borderRadius: '40px', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)' }
+  profileAvatar: { width: '80px', height: '80px', backgroundColor: '#f5f5f7', borderRadius: '40px', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)' },
+  
+  // YENİ: Timeline stilleri
+  timelineInput: { width: '100%', minHeight: '80px', padding: '14px', borderRadius: '12px', border: 'none', backgroundColor: '#f5f5f7', fontSize: '15px', fontWeight: 300, color: '#1d1d1f', outline: 'none', resize: 'vertical', fontFamily: 'inherit' },
+  timelineButton: { alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: '6px', background: '#007aff', color: '#fff', border: 'none', padding: '8px 18px', borderRadius: '20px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', marginTop: '12px' }
 };
