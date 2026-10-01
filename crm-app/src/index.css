@@ -111,13 +111,24 @@ body {
   overflow-x: hidden !important;
 }
 
-/* 3. İç içe kutuların metin boyutuna göre değil, ekran boyutuna göre daralabilmesini sağlar */
-.hover-item > div {
+/* 3. Form dışındaki listedeki elemanların daralabilmesini sağlar */
+.hover-item > div:not(.detailItem) {
   min-width: 0 !important;
 }
 
-/* 4. Ekrana sığmayan uzun e-postaları ve firma isimlerini zorla üç noktaya (...) çevirir */
-.hover-item span, .content-area span {
+/* 4. Sadece firma listesindeki sol sütun yazılarında (isim, mail vs.) taşmayı üç noktaya çevirir */
+.listItemLeftColumn span, .listItemLeft span {
   overflow: hidden !important;
   text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  display: block;
+  max-width: 100%;
+}
+
+/* 5. Form alanlarındaki yazıların (Firma Adı, Ülke vb.) kesilmesini engeller ve tam görünmesini sağlar */
+.detailItem span.listItemText {
+  white-space: nowrap !important;
+  overflow: visible !important;
+  flex-shrink: 0;
+  margin-right: 15px;
 }
