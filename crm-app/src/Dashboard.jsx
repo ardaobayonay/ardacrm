@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
-import { ChevronRight, ChevronDown, ArrowLeft, Building2, Search, Plus, Globe2, Save } from 'lucide-react';
+import { ChevronRight, ChevronDown, ArrowLeft, Building2, Phone, Mail, User, MapPin, Search, Plus, TrendingUp, Users, CheckCircle2, Globe2, Save, Trash2 } from 'lucide-react';
 
 const regions = [
   { id: 'weu', name: 'Batı Avrupa', color: '#007aff', countries: [{ tr: 'Almanya', en: 'Germany' }, { tr: 'Avusturya', en: 'Austria' }, { tr: 'Belçika', en: 'Belgium' }, { tr: 'Birleşik Krallık', en: 'United Kingdom' }, { tr: 'Fransa', en: 'France' }, { tr: 'Hollanda', en: 'Netherlands' }, { tr: 'İrlanda', en: 'Ireland' }, { tr: 'İsviçre', en: 'Switzerland' }, { tr: 'Lüksemburg', en: 'Luxembourg' }] },
@@ -100,10 +100,10 @@ export default function Dashboard() {
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) return 'Günaydın.';
-    if (hour >= 12 && hour < 18) return 'İyi günler.';
-    if (hour >= 18 && hour < 22) return 'İyi akşamlar.';
-    return 'İyi geceler.';
+    if (hour >= 5 && hour < 12) return 'Günaydın';
+    if (hour >= 12 && hour < 18) return 'İyi Günler';
+    if (hour >= 18 && hour < 22) return 'İyi Akşamlar';
+    return 'İyi Geceler';
   };
 
   const toggleRegion = (regionName) => {
@@ -228,12 +228,13 @@ export default function Dashboard() {
         {currentView === 'home' && (
           <div className="content-area">
             <div style={styles.pageHeader}>
-              <h1 style={styles.largeTitle}>{getGreeting()}</h1>
+              <h1 style={styles.largeTitle}>{getGreeting()} 👋</h1>
               <button style={styles.pillButton} onClick={() => setCurrentView('addCompany')}>
                 <Plus size={18} /> Yeni Ekle
               </button>
             </div>
 
+            {/* iOS TARZI SAF BEYAZ, SİMGE İÇERMEYEN WIDGET KUTULARI */}
             <div className="stats-grid">
               <div className="widget-hover" style={styles.iosWidget} onClick={() => handleWidgetClick('all', 'Tüm Firmalar')}>
                 <span style={styles.iosWidgetLabel}>Toplam Firma</span>
@@ -370,6 +371,7 @@ export default function Dashboard() {
                 <div style={styles.profileHeader}>
                   <div style={styles.profileAvatar}><Building2 size={40} color="#007aff" /></div>
                   <h1 style={{...styles.largeTitle, textAlign: 'center'}}>{selectedCompany.name}</h1>
+                  {/* Sektör yazısı kaldırıldı, doğrudan sektör ismi gösteriliyor */}
                   <span style={styles.secondaryText}>{selectedCompany.sector ? `${selectedCompany.sector} • ` : ''}{selectedCompany.city ? `${selectedCompany.city}, ` : ''}{selectedCompany.country}</span>
                 </div>
                 <h2 style={styles.sectionHeader}>İLETİŞİM BİLGİLERİ</h2>
@@ -415,9 +417,12 @@ const styles = {
   pageHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' },
   pageHeaderNav: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', minHeight: '30px' },
   sectionHeader: { fontSize: '13px', fontWeight: 500, color: '#86868b', marginTop: '40px', marginBottom: '12px', paddingLeft: '12px', letterSpacing: '0.5px' }, 
+  
+  // YENİ iOS WIDGET STİLLERİ
   iosWidget: { backgroundColor: '#ffffff', borderRadius: '20px', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '120px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' },
   iosWidgetLabel: { fontSize: '14px', fontWeight: 500, color: '#86868b' },
   iosWidgetNumber: { fontSize: '38px', fontWeight: 500, margin: 0, color: '#1d1d1f', letterSpacing: '-1px' },
+
   pillButton: { display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #007aff 0%, #0056b3 100%)', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: '24px', fontSize: '15px', fontWeight: 500, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0, 122, 255, 0.3)' },
   pillButtonSmall: { display: 'flex', alignItems: 'center', gap: '4px', background: '#007aff', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '20px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' },
   navButton: { display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'transparent', border: 'none', color: '#007aff', cursor: 'pointer', padding: 0, marginLeft: '-8px', fontFamily: 'inherit', fontWeight: 300 },
