@@ -100,10 +100,10 @@ export default function Dashboard() {
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) return 'Günaydın';
-    if (hour >= 12 && hour < 18) return 'İyi Günler';
-    if (hour >= 18 && hour < 22) return 'İyi Akşamlar';
-    return 'İyi Geceler';
+    if (hour >= 5 && hour < 12) return 'Günaydın.';
+    if (hour >= 12 && hour < 18) return 'İyi günler.';
+    if (hour >= 18 && hour < 22) return 'İyi akşamlar.';
+    return 'İyi geceler.';
   };
 
   const toggleRegion = (regionName) => {
@@ -228,7 +228,7 @@ export default function Dashboard() {
         {currentView === 'home' && (
           <div className="content-area">
             <div style={styles.pageHeader}>
-              <h1 style={styles.largeTitle}>{getGreeting()} 👋</h1>
+              <h1 style={styles.largeTitle}>{getGreeting()} </h1>
               <button style={styles.pillButton} onClick={() => setCurrentView('addCompany')}>
                 <Plus size={18} /> Yeni Ekle
               </button>
