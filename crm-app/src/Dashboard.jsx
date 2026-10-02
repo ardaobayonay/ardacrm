@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
-import { ChevronRight, ChevronDown, ArrowLeft, Building2, Search, Plus, Globe2, Save, MessageSquarePlus, Download } from 'lucide-react';
+// İkonlar en stabil standart versiyonlarıyla güncellendi (MessageSquarePlus -> MessageSquare)
+import { ChevronRight, ChevronDown, ArrowLeft, Building2, Phone, Mail, User, MapPin, Search, Plus, TrendingUp, Users, CheckCircle2, Globe2, Save, Trash2, Download, MessageSquare } from 'lucide-react';
 
 const regions = [
   { id: 'weu', name: 'Batı Avrupa', color: '#007aff', countries: [{ tr: 'Almanya', en: 'Germany' }, { tr: 'Avusturya', en: 'Austria' }, { tr: 'Belçika', en: 'Belgium' }, { tr: 'Birleşik Krallık', en: 'United Kingdom' }, { tr: 'Fransa', en: 'France' }, { tr: 'Hollanda', en: 'Netherlands' }, { tr: 'İrlanda', en: 'Ireland' }, { tr: 'İsviçre', en: 'Switzerland' }, { tr: 'Lüksemburg', en: 'Luxembourg' }] },
@@ -48,18 +49,33 @@ export default function Dashboard() {
     if (!error) navigate('/'); 
   };
 
+  // ÇÖKME ÖNLEYİCİ ZIRH - 1: Bozuk verileri hatasız ayıklar
   const getParsedNotes = (notesStr) => {
     if (!notesStr) return [];
     try {
       const parsed = JSON.parse(notesStr);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) {
+        return parsed.map((item, index) => {
+          if (!item || typeof item !== 'object') {
+            return { id: `legacy-${index}`, date: new Date().toISOString(), text: String(item) };
+          }
+          return item;
+        });
+      }
     } catch (e) {}
-    return [{ id: 'legacy', date: new Date().toISOString(), text: notesStr }];
+    return [{ id: 'legacy', date: new Date().toISOString(), text: String(notesStr) }];
   };
 
+  // ÇÖKME ÖNLEYİCİ ZIRH - 2: Tarih yoksa veya bozuksa beyaz ekranı engeller
   const formatDate = (isoString) => {
-    const date = new Date(isoString);
-    return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    try {
+      if (!isoString) return '';
+      const date = new Date(isoString);
+      if (isNaN(date.getTime())) return ''; // Geçersiz tarih koruması
+      return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      return '';
+    }
   };
 
   const handleAddNoteToHistory = async () => {
@@ -214,34 +230,34 @@ export default function Dashboard() {
   else if (selectedLocation.displayName) { listTitle = selectedLocation.displayName + '.'; exportFileName = selectedLocation.displayName.toLowerCase().replace(/ /g, '_'); }
   else if (selectedCategory.displayName) { listTitle = selectedCategory.displayName + '.'; exportFileName = selectedCategory.displayName.toLowerCase().replace(/ /g, '_'); }
 
- // YENİ: Dinamik CSV İndirme Fonksiyonu (Türkiye/Avrupa Excel Uyumlu)
   const handleExportCSV = () => {
     if (displayedCompanies.length === 0) return;
 
-    // Excel sütun başlıkları
     const headers = ['Firma Adı', 'Bölge', 'Ülke', 'Şehir', 'Sektör', 'Yetkili Kişi', 'Unvan', 'Telefon', 'E-posta', 'Aşama', 'Görüşme Geçmişi'];
 
-    // Şirket verilerini satırlara çevir
     const csvRows = displayedCompanies.map(c => {
-      // Timeline notlarını yan yana tarihleriyle birleştir
       const parsedNotes = getParsedNotes(c.notes);
-      let combinedNotes = parsedNotes.map(n => `[${new Date(n.date).toLocaleDateString('tr-TR')}] ${n.text}`).join(' | ');
-      // Excel'de formülleri bozmaması ve karışmaması için metinleri temizle
-      combinedNotes = combinedNotes.replace(/"/g, '""').replace(/\n/g, ' ');
+      let combinedNotes = parsedNotes.map(n => {
+        let dateStr = '';
+        try {
+          if (n?.date) {
+            const d = new Date(n.date);
+            if (!isNaN(d.getTime())) dateStr = `[${d.toLocaleDateString('tr-TR')}] `;
+          }
+        } catch(e) {}
+        let rawText = String(n?.text || '');
+        rawText = rawText.replace(/"/g, '""').replace(/\n/g, ' ');
+        return `${dateStr}${rawText}`;
+      }).join(' | ');
 
-      // DÜZELTME: Virgül (,) yerine noktalı virgül (;) kullanıyoruz
       return `"${c.name || ''}";"${c.region || ''}";"${c.country || ''}";"${c.city || ''}";"${c.sector || ''}";"${c.contactName || ''}";"${c.title || ''}";"${c.phone || ''}";"${c.email || ''}";"${c.status || ''}";"${combinedNotes}"`;
     });
 
-    // Başlık ve satırları noktalı virgül ile birleştir
     const csvContent = [headers.join(';'), ...csvRows].join('\n');
-    
-    // Türkçe karakter (UTF-8) desteği için BOM (Byte Order Mark) ekle
     const bom = '\uFEFF';
     const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     
-    // Gizli indirme linki tetikleyici
     const link = document.createElement('a');
     link.href = url;
     link.setAttribute('download', `${exportFileName}_listesi.csv`);
@@ -249,9 +265,11 @@ export default function Dashboard() {
     link.click();
     document.body.removeChild(link);
   };
+
+  const parsedHistory = selectedCompany ? getParsedNotes(selectedCompany.notes) : [];
+
   return (
     <div className="app-container">
-      {/* SOL MENÜ */}
       <div className="app-sidebar">
         <div style={styles.sidebarHeader} onClick={handleLogoClick}>
           <h1 style={styles.largeTitle}>FTS</h1>
@@ -305,7 +323,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* SAĞ İÇERİK */}
       <div className="app-main">
         {currentView === 'home' && (
           <div className="content-area">
@@ -356,7 +373,6 @@ export default function Dashboard() {
             <div style={styles.pageHeaderNav}>
               {!searchQuery && (<button style={styles.navButton} onClick={() => setCurrentView('home')}><ArrowLeft size={22} /> <span style={{fontSize: '17px', paddingTop: '1px'}}>Geri</span></button>)}
               
-              {/* YENİ: İndirme ve Ekleme butonları yan yana */}
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginLeft: 'auto' }}>
                 {displayedCompanies.length > 0 && (
                   <button 
@@ -492,7 +508,7 @@ export default function Dashboard() {
                     />
                     {newNoteText.trim() && (
                       <button style={styles.timelineButton} onClick={handleAddNoteToHistory} disabled={isAddingNote}>
-                        <MessageSquarePlus size={16} />
+                        <MessageSquare size={16} />
                         {isAddingNote ? 'Ekleniyor...' : 'Notu kaydet'}
                       </button>
                     )}
@@ -502,8 +518,11 @@ export default function Dashboard() {
                     {parsedHistory.length === 0 ? (
                       <span style={{...styles.secondaryText, textAlign: 'center', paddingBottom: '12px'}}>Henüz not eklenmemiş.</span>
                     ) : (
-                      parsedHistory.map((note, index) => (
-                        <div key={note.id} style={{ display: 'flex', gap: '16px', paddingBottom: index === parsedHistory.length - 1 ? '0' : '24px' }}>
+                      parsedHistory.map((note, index) => {
+                        const formattedDate = note?.date ? formatDate(note.date) : '';
+                        
+                        return (
+                        <div key={note?.id || index} style={{ display: 'flex', gap: '16px', paddingBottom: index === parsedHistory.length - 1 ? '0' : '24px' }}>
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                             <div style={{ width: '8px', height: '8px', borderRadius: '4px', backgroundColor: '#007aff', marginTop: '6px', zIndex: 2 }}></div>
                             {index !== parsedHistory.length - 1 && (
@@ -511,11 +530,15 @@ export default function Dashboard() {
                             )}
                           </div>
                           <div style={{ flex: 1, paddingBottom: '4px' }}>
-                            <div style={{ fontSize: '13px', fontWeight: 500, color: '#86868b', marginBottom: '4px' }}>{formatDate(note.date)}</div>
-                            <div style={{ fontSize: '15px', fontWeight: 300, color: '#1d1d1f', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>{note.text}</div>
+                            {formattedDate && (
+                              <div style={{ fontSize: '13px', fontWeight: 500, color: '#86868b', marginBottom: '4px' }}>{formattedDate}</div>
+                            )}
+                            <div style={{ fontSize: '15px', fontWeight: 300, color: '#1d1d1f', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>
+                              {note?.text || String(note)}
+                            </div>
                           </div>
                         </div>
-                      ))
+                      )})
                     )}
                   </div>
                 </div>
