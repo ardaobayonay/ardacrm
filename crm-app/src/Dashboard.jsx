@@ -33,7 +33,8 @@ export default function Dashboard() {
   const [newNoteText, setNewNoteText] = useState('');
   const [isAddingNote, setIsAddingNote] = useState(false);
 
-  const [newCompany, setNewCompany] = useState({ name: '', region: 'Batı Avrupa', country: 'Almanya', city: '', sector: '', contactName: '', title: '', email: '', phone: '', status: 'İlk Temas', notes: '' });
+  // YENİ: Varsayılan durum "Hedefte (İletişim Bekleniyor)" yapıldı
+  const [newCompany, setNewCompany] = useState({ name: '', region: 'Batı Avrupa', country: 'Almanya', city: '', sector: '', contactName: '', title: '', email: '', phone: '', status: 'Hedefte (İletişim Bekleniyor)', notes: '' });
 
   useEffect(() => { fetchCompanies(); }, []);
 
@@ -52,7 +53,6 @@ export default function Dashboard() {
     if (!error) navigate('/'); 
   };
 
-  // ÇÖKME ÖNLEYİCİ: En dayanıklı (saf) notes parser
   const getParsedNotes = (notesStr) => {
     if (!notesStr || typeof notesStr !== 'string' || notesStr.trim() === '') return [];
     
@@ -68,7 +68,6 @@ export default function Dashboard() {
       }
     } catch (e) {} 
     
-    // JSON değilse saf düz metin olarak dönüştür
     return [{ id: 'legacy-text', date: new Date().toISOString(), text: notesStr }];
   };
 
@@ -123,7 +122,7 @@ export default function Dashboard() {
       if (!error) {
         await fetchCompanies(); 
         setCurrentView('home'); 
-        setNewCompany({ name: '', region: 'Batı Avrupa', country: 'Almanya', city: '', sector: '', contactName: '', title: '', email: '', phone: '', status: 'İlk Temas', notes: '' }); 
+        setNewCompany({ name: '', region: 'Batı Avrupa', country: 'Almanya', city: '', sector: '', contactName: '', title: '', email: '', phone: '', status: 'Hedefte (İletişim Bekleniyor)', notes: '' }); 
       }
     } catch (e) {
        console.error("Şirket ekleme hatası:", e);
@@ -239,7 +238,8 @@ export default function Dashboard() {
     displayedCompanies = companies.filter(c => c.country === selectedLocation.displayName || c.country === selectedLocation.id);
   } else if (selectedCategory.id !== '') {
     if (selectedCategory.id === 'all') displayedCompanies = companies;
-    else if (selectedCategory.id === 'active') displayedCompanies = companies.filter(c => c.status === 'İletişimde' || c.status === 'Teklif Verildi' || c.status === 'İlk Temas');
+    // YENİ: Aktif Görüşmeler filtresine yeni statü eklendi
+    else if (selectedCategory.id === 'active') displayedCompanies = companies.filter(c => c.status === 'Hedefte (İletişim Bekleniyor)' || c.status === 'İletişimde' || c.status === 'Teklif Verildi' || c.status === 'İlk Temas');
     else if (selectedCategory.id === 'won') displayedCompanies = companies.filter(c => c.status === 'Müşteri Oldu');
     else if (selectedCategory.id === 'contacts') {
       if (contactSearchQuery.trim() !== '') {
@@ -249,7 +249,8 @@ export default function Dashboard() {
   }
 
   const totalCompanies = companies.length;
-  const activeCompanies = companies.filter(c => c.status === 'İletişimde' || c.status === 'Teklif Verildi' || c.status === 'İlk Temas').length;
+  // YENİ: Aktif sayaca yeni statü dahil edildi
+  const activeCompanies = companies.filter(c => c.status === 'Hedefte (İletişim Bekleniyor)' || c.status === 'İletişimde' || c.status === 'Teklif Verildi' || c.status === 'İlk Temas').length;
   const wonCompanies = companies.filter(c => c.status === 'Müşteri Oldu').length;
 
   let listTitle = 'Firmalar.';
@@ -466,7 +467,18 @@ export default function Dashboard() {
               </div>
               <h2 style={styles.sectionHeader}>Durum.</h2>
               <div style={styles.listGroup}>
-                <div style={styles.detailItem}><span style={styles.listItemText}>Aşama</span><select style={styles.formSelect} value={newCompany.status} onChange={e => setNewCompany({...newCompany, status: e.target.value})}><option value="İlk Temas">İlk Temas</option><option value="İletişimde">İletişimde</option><option value="Teklif Verildi">Teklif Verildi</option><option value="Müşteri Oldu">Müşteri Oldu</option><option value="Reddedildi">Reddedildi</option></select></div>
+                <div style={styles.detailItem}>
+                  <span style={styles.listItemText}>Aşama</span>
+                  {/* YENİ: Ekleme ekranına "Hedefte" seçeneği eklendi */}
+                  <select style={styles.formSelect} value={newCompany.status} onChange={e => setNewCompany({...newCompany, status: e.target.value})}>
+                    <option value="Hedefte (İletişim Bekleniyor)">Hedefte (İletişim Bekleniyor)</option>
+                    <option value="İlk Temas">İlk Temas</option>
+                    <option value="İletişimde">İletişimde</option>
+                    <option value="Teklif Verildi">Teklif Verildi</option>
+                    <option value="Müşteri Oldu">Müşteri Oldu</option>
+                    <option value="Reddedildi">Reddedildi</option>
+                  </select>
+                </div>
                 <div style={{...styles.detailItem, flexDirection: 'column', alignItems: 'flex-start', borderBottom: 'none'}}>
                   <span style={styles.listItemText}>İlk görüşme notu</span>
                   <textarea style={{...styles.timelineInput, marginTop: '10px'}} placeholder="Bu firma için ilk notunuzu buraya girebilirsiniz..." value={newCompany.notes} onChange={e => setNewCompany({...newCompany, notes: e.target.value})} />
@@ -504,7 +516,18 @@ export default function Dashboard() {
                 </div>
                 <h2 style={styles.sectionHeader}>Durum.</h2>
                 <div style={styles.listGroup}>
-                  <div style={styles.detailItem}><span style={styles.listItemText}>Aşama</span><select style={styles.formSelect} value={editCompany.status} onChange={e => setEditCompany({...editCompany, status: e.target.value})}><option value="İlk Temas">İlk Temas</option><option value="İletişimde">İletişimde</option><option value="Teklif Verildi">Teklif Verildi</option><option value="Müşteri Oldu">Müşteri Oldu</option><option value="Reddedildi">Reddedildi</option></select></div>
+                  <div style={styles.detailItem}>
+                    <span style={styles.listItemText}>Aşama</span>
+                    {/* YENİ: Düzenleme ekranına "Hedefte" seçeneği eklendi */}
+                    <select style={styles.formSelect} value={editCompany.status} onChange={e => setEditCompany({...editCompany, status: e.target.value})}>
+                      <option value="Hedefte (İletişim Bekleniyor)">Hedefte (İletişim Bekleniyor)</option>
+                      <option value="İlk Temas">İlk Temas</option>
+                      <option value="İletişimde">İletişimde</option>
+                      <option value="Teklif Verildi">Teklif Verildi</option>
+                      <option value="Müşteri Oldu">Müşteri Oldu</option>
+                      <option value="Reddedildi">Reddedildi</option>
+                    </select>
+                  </div>
                   <div style={{...styles.detailItem, flexDirection: 'column', alignItems: 'flex-start', borderBottom: 'none'}}>
                     <span style={styles.listItemText}>Görüşme geçmişi</span>
                     <span style={{...styles.subText, marginTop: '4px'}}>Notlarınızı düzenleme ekranından çıktığınızda zaman çizelgesi üzerinden ekleyebilirsiniz.</span>
