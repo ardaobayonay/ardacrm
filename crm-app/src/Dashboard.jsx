@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
-// İkonlar en stabil standart versiyonlarıyla güncellendi (MessageSquarePlus -> MessageSquare)
 import { ChevronRight, ChevronDown, ArrowLeft, Building2, Phone, Mail, User, MapPin, Search, Plus, TrendingUp, Users, CheckCircle2, Globe2, Save, Trash2, Download, MessageSquare } from 'lucide-react';
 
 const regions = [
@@ -39,9 +38,13 @@ export default function Dashboard() {
   useEffect(() => { fetchCompanies(); }, []);
 
   const fetchCompanies = async () => {
-    const { data, error } = await supabase.from('companies').select('*').order('id', { ascending: false });
-    if (data) setCompanies(data);
-    if (error) console.error("Veri çekme hatası:", error.message);
+    try {
+      const { data, error } = await supabase.from('companies').select('*').order('id', { ascending: false });
+      if (data) setCompanies(data);
+      if (error) console.error("Veri çekme hatası:", error.message);
+    } catch (e) {
+      console.error("Veritabanı bağlantı hatası:", e);
+    }
   };
 
   const handleLogout = async () => {
@@ -49,29 +52,31 @@ export default function Dashboard() {
     if (!error) navigate('/'); 
   };
 
-  // ÇÖKME ÖNLEYİCİ ZIRH - 1: Bozuk verileri hatasız ayıklar
+  // ÇÖKME ÖNLEYİCİ: En dayanıklı (saf) notes parser
   const getParsedNotes = (notesStr) => {
-    if (!notesStr) return [];
+    if (!notesStr || typeof notesStr !== 'string' || notesStr.trim() === '') return [];
+    
     try {
       const parsed = JSON.parse(notesStr);
       if (Array.isArray(parsed)) {
         return parsed.map((item, index) => {
-          if (!item || typeof item !== 'object') {
-            return { id: `legacy-${index}`, date: new Date().toISOString(), text: String(item) };
+          if (item && typeof item === 'object' && item.text) {
+             return item;
           }
-          return item;
+          return { id: `legacy-${index}`, date: new Date().toISOString(), text: String(item) };
         });
       }
-    } catch (e) {}
-    return [{ id: 'legacy', date: new Date().toISOString(), text: String(notesStr) }];
+    } catch (e) {} 
+    
+    // JSON değilse saf düz metin olarak dönüştür
+    return [{ id: 'legacy-text', date: new Date().toISOString(), text: notesStr }];
   };
 
-  // ÇÖKME ÖNLEYİCİ ZIRH - 2: Tarih yoksa veya bozuksa beyaz ekranı engeller
   const formatDate = (isoString) => {
+    if (!isoString) return '';
     try {
-      if (!isoString) return '';
       const date = new Date(isoString);
-      if (isNaN(date.getTime())) return ''; // Geçersiz tarih koruması
+      if (isNaN(date.getTime())) return '';
       return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     } catch (e) {
       return '';
@@ -79,22 +84,27 @@ export default function Dashboard() {
   };
 
   const handleAddNoteToHistory = async () => {
-    if (!newNoteText.trim()) return;
+    if (!newNoteText.trim() || !selectedCompany) return;
     setIsAddingNote(true);
 
-    const currentNotes = getParsedNotes(selectedCompany.notes);
-    const newNoteObj = { id: Date.now(), date: new Date().toISOString(), text: newNoteText.trim() };
-    const updatedNotesArray = [newNoteObj, ...currentNotes]; 
-    const updatedNotesStr = JSON.stringify(updatedNotesArray);
+    try {
+      const currentNotes = getParsedNotes(selectedCompany.notes);
+      const newNoteObj = { id: Date.now(), date: new Date().toISOString(), text: newNoteText.trim() };
+      const updatedNotesArray = [newNoteObj, ...currentNotes]; 
+      const updatedNotesStr = JSON.stringify(updatedNotesArray);
 
-    const { error } = await supabase.from('companies').update({ notes: updatedNotesStr }).eq('id', selectedCompany.id);
+      const { error } = await supabase.from('companies').update({ notes: updatedNotesStr }).eq('id', selectedCompany.id);
 
-    if (!error) {
-      const updatedCompany = { ...selectedCompany, notes: updatedNotesStr };
-      setSelectedCompany(updatedCompany);
-      setNewNoteText('');
-      await fetchCompanies(); 
+      if (!error) {
+        const updatedCompany = { ...selectedCompany, notes: updatedNotesStr };
+        setSelectedCompany(updatedCompany);
+        setNewNoteText('');
+        await fetchCompanies(); 
+      }
+    } catch (e) {
+      console.error("Not ekleme hatası:", e);
     }
+    
     setIsAddingNote(false);
   };
 
@@ -102,30 +112,41 @@ export default function Dashboard() {
     e.preventDefault();
     setIsSubmitting(true);
     
-    let initialNotesStr = '[]';
-    if (newCompany.notes && newCompany.notes.trim()) {
-      initialNotesStr = JSON.stringify([{ id: Date.now(), date: new Date().toISOString(), text: newCompany.notes.trim() }]);
-    }
-    const companyToInsert = { ...newCompany, notes: initialNotesStr };
+    try {
+      let initialNotesStr = '[]';
+      if (newCompany.notes && newCompany.notes.trim()) {
+        initialNotesStr = JSON.stringify([{ id: Date.now(), date: new Date().toISOString(), text: newCompany.notes.trim() }]);
+      }
+      const companyToInsert = { ...newCompany, notes: initialNotesStr };
 
-    const { error } = await supabase.from('companies').insert([companyToInsert]);
-    if (!error) {
-      await fetchCompanies(); 
-      setCurrentView('home'); 
-      setNewCompany({ name: '', region: 'Batı Avrupa', country: 'Almanya', city: '', sector: '', contactName: '', title: '', email: '', phone: '', status: 'İlk Temas', notes: '' }); 
+      const { error } = await supabase.from('companies').insert([companyToInsert]);
+      if (!error) {
+        await fetchCompanies(); 
+        setCurrentView('home'); 
+        setNewCompany({ name: '', region: 'Batı Avrupa', country: 'Almanya', city: '', sector: '', contactName: '', title: '', email: '', phone: '', status: 'İlk Temas', notes: '' }); 
+      }
+    } catch (e) {
+       console.error("Şirket ekleme hatası:", e);
     }
+    
     setIsSubmitting(false);
   };
 
   const handleUpdateSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    const { error } = await supabase.from('companies').update(editCompany).eq('id', editCompany.id);
-    if (!error) {
-      await fetchCompanies(); 
-      setSelectedCompany(editCompany); 
-      setIsEditing(false); 
+    
+    try {
+      const { error } = await supabase.from('companies').update(editCompany).eq('id', editCompany.id);
+      if (!error) {
+        await fetchCompanies(); 
+        setSelectedCompany(editCompany); 
+        setIsEditing(false); 
+      }
+    } catch (e) {
+      console.error("Şirket güncelleme hatası:", e);
     }
+    
     setIsSubmitting(false);
   };
 
@@ -133,13 +154,19 @@ export default function Dashboard() {
     const confirmDelete = window.confirm(`${editCompany.name} firmasını kalıcı olarak silmek istediğinize emin misiniz?`);
     if (!confirmDelete) return;
     setIsDeleting(true);
-    const { error } = await supabase.from('companies').delete().eq('id', editCompany.id);
-    if (!error) {
-      await fetchCompanies();
-      setIsEditing(false);
-      setSelectedCompany(null);
-      setCurrentView('companyList'); 
+    
+    try {
+      const { error } = await supabase.from('companies').delete().eq('id', editCompany.id);
+      if (!error) {
+        await fetchCompanies();
+        setIsEditing(false);
+        setSelectedCompany(null);
+        setCurrentView('companyList'); 
+      }
+    } catch (e) {
+      console.error("Silme hatası:", e);
     }
+    
     setIsDeleting(false);
   };
 
@@ -165,6 +192,7 @@ export default function Dashboard() {
     if (hour >= 12 && hour < 18) return 'İyi günler.';
     if (hour >= 18 && hour < 22) return 'İyi akşamlar.';
     if (hour >= 22 && hour < 5)  return 'İyi geceler.';
+    return 'İyi günler.';
   };
 
   const toggleRegion = (regionName) => {
@@ -232,38 +260,40 @@ export default function Dashboard() {
 
   const handleExportCSV = () => {
     if (displayedCompanies.length === 0) return;
-
-    const headers = ['Firma Adı', 'Bölge', 'Ülke', 'Şehir', 'Sektör', 'Yetkili Kişi', 'Unvan', 'Telefon', 'E-posta', 'Aşama', 'Görüşme Geçmişi'];
-
-    const csvRows = displayedCompanies.map(c => {
-      const parsedNotes = getParsedNotes(c.notes);
-      let combinedNotes = parsedNotes.map(n => {
-        let dateStr = '';
-        try {
-          if (n?.date) {
-            const d = new Date(n.date);
-            if (!isNaN(d.getTime())) dateStr = `[${d.toLocaleDateString('tr-TR')}] `;
-          }
-        } catch(e) {}
-        let rawText = String(n?.text || '');
-        rawText = rawText.replace(/"/g, '""').replace(/\n/g, ' ');
-        return `${dateStr}${rawText}`;
-      }).join(' | ');
-
-      return `"${c.name || ''}";"${c.region || ''}";"${c.country || ''}";"${c.city || ''}";"${c.sector || ''}";"${c.contactName || ''}";"${c.title || ''}";"${c.phone || ''}";"${c.email || ''}";"${c.status || ''}";"${combinedNotes}"`;
-    });
-
-    const csvContent = [headers.join(';'), ...csvRows].join('\n');
-    const bom = '\uFEFF';
-    const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
     
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `${exportFileName}_listesi.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      const headers = ['Firma Adı', 'Bölge', 'Ülke', 'Şehir', 'Sektör', 'Yetkili Kişi', 'Unvan', 'Telefon', 'E-posta', 'Aşama', 'Görüşme Geçmişi'];
+
+      const csvRows = displayedCompanies.map(c => {
+        const parsedNotes = getParsedNotes(c.notes);
+        let combinedNotes = parsedNotes.map(n => {
+          let dateStr = '';
+          if (n && n.date) {
+            const fd = formatDate(n.date);
+            if (fd) dateStr = `[${fd}] `;
+          }
+          let rawText = (n && n.text) ? String(n.text) : '';
+          rawText = rawText.replace(/"/g, '""').replace(/\n/g, ' ');
+          return `${dateStr}${rawText}`;
+        }).join(' | ');
+
+        return `"${c.name || ''}";"${c.region || ''}";"${c.country || ''}";"${c.city || ''}";"${c.sector || ''}";"${c.contactName || ''}";"${c.title || ''}";"${c.phone || ''}";"${c.email || ''}";"${c.status || ''}";"${combinedNotes}"`;
+      });
+
+      const csvContent = [headers.join(';'), ...csvRows].join('\n');
+      const bom = '\uFEFF';
+      const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${exportFileName}_listesi.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch(e) {
+      console.error("İndirme hatası:", e);
+    }
   };
 
   const parsedHistory = selectedCompany ? getParsedNotes(selectedCompany.notes) : [];
@@ -515,14 +545,17 @@ export default function Dashboard() {
                   </div>
                   
                   <div style={{ display: 'flex', flexDirection: 'column', padding: '20px 12px 12px 12px' }}>
-                    {parsedHistory.length === 0 ? (
+                    {!Array.isArray(parsedHistory) || parsedHistory.length === 0 ? (
                       <span style={{...styles.secondaryText, textAlign: 'center', paddingBottom: '12px'}}>Henüz not eklenmemiş.</span>
                     ) : (
                       parsedHistory.map((note, index) => {
-                        const formattedDate = note?.date ? formatDate(note.date) : '';
+                        if (!note || typeof note !== 'object' || !note.text) return null;
+                        
+                        let formattedDate = '';
+                        if (note.date) formattedDate = formatDate(note.date);
                         
                         return (
-                        <div key={note?.id || index} style={{ display: 'flex', gap: '16px', paddingBottom: index === parsedHistory.length - 1 ? '0' : '24px' }}>
+                        <div key={note.id || index} style={{ display: 'flex', gap: '16px', paddingBottom: index === parsedHistory.length - 1 ? '0' : '24px' }}>
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                             <div style={{ width: '8px', height: '8px', borderRadius: '4px', backgroundColor: '#007aff', marginTop: '6px', zIndex: 2 }}></div>
                             {index !== parsedHistory.length - 1 && (
@@ -534,7 +567,7 @@ export default function Dashboard() {
                               <div style={{ fontSize: '13px', fontWeight: 500, color: '#86868b', marginBottom: '4px' }}>{formattedDate}</div>
                             )}
                             <div style={{ fontSize: '15px', fontWeight: 300, color: '#1d1d1f', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>
-                              {note?.text || String(note)}
+                              {String(note.text)}
                             </div>
                           </div>
                         </div>
